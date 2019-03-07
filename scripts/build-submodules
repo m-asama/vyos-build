@@ -161,26 +161,11 @@ build_frr() {
     # http://docs.frrouting.org/projects/dev-guide/en/latest/packaging-debian.html
     ./bootstrap.sh
     ./configure --with-pkg-extra-version=-vyos
-    make dist
-
-    # Create backports debian sources
-    mv debianpkg debian
-    make -f debian/rules backports
-
-    # Create a new directory to build the package and populate with package source.
-    mkdir frrpkg
-    cd frrpkg
-    tar xf ../frr_*.orig.tar.gz
-    cd frr*
-    source /etc/os-release
-    tar xf ../../frr_*${ID}${VERSION_ID}*.debian.tar.xz
 
     # Build Debian Package
     debuild --no-lintian --set-envvar=WANT_SNMP=1 --set-envvar=WANT_RPKI=1 \
         --set-envvar=WANT_CUMULUS_MODE=0 -b -uc -us \
         -j$(cat /proc/cpuinfo | grep processor | wc -l)
-
-    mv ../frr_*.deb $PKGDIR
   ) >>$PKGDIR/$PKG.buildlog 2>&1
   if [ $? -ne 0 ]; then
     status_fail

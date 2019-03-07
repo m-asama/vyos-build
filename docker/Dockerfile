@@ -151,14 +151,35 @@ RUN export RTRLIB_COMMIT="v0.6.3" && \
 # see http://docs.frrouting.org/projects/dev-guide/en/latest/building-frr-for-debian8.html
 #
 RUN apt-get update && apt-get install -y -t jessie-backports \
-      swig \
       libcmocka-dev \
       libcmocka0
 
-RUN export LIBYANG_COMMIT="179da47f2e8de" && \
+# Prerequisites for building swig 3.0.12
+RUN apt-get update && apt-get install -y \
+      dpkg-dev \
+      bison \
+      debhelper \
+      dh-autoreconf \
+      libpcre3-dev
+
+# Prerequisites for building libyang 0.16.74
+RUN curl -O http://cdn-fastly.deb.debian.org/debian/pool/main/s/swig/swig_3.0.12.orig.tar.gz && \
+    tar xf swig_3.0.12.orig.tar.gz && \
+    cd swig-3.0.12 && \
+    curl -O http://cdn-fastly.deb.debian.org/debian/pool/main/s/swig/swig_3.0.12-2.debian.tar.xz && \
+    tar xf swig_3.0.12-2.debian.tar.xz && \
+    fakeroot make -f debian/rules binary && \
+    dpkg -i ../swig_3.0.12-2_amd64.deb ../swig3.0_3.0.12-2_amd64.deb
+
+# Prerequisites for building libyang 0.16.74
+RUN apt-get update && apt-get install -y \
+      python3-dev
+
+# Build and install libyang 0.16.74
+RUN export LIBYANG_COMMIT="49306a87b0d0c4993feb65d3cc666a90d2cf9caf" && \
     git clone https://github.com/opensourcerouting/libyang.git && \
     cd libyang && git checkout $LIBYANG_COMMIT && mkdir build && cd build && \
-    cmake .. && make build-deb && \
+    cmake -DPLUGINS_DIR:STRING=/usr/lib/libyang -DENABLE_LYD_PRIV:BOOL=ON .. && make build-deb && \
     dpkg -i debs/*.deb
 
 # Packages needed for frr
